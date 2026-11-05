@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Calorie Calculator</title>
+<style>
+:root{--bg:#f5f6f2;--card:#ffffff;--ink:#1c2b24;--mute:#63716a;--line:#dce2dc;--acc:#1c7a4b;--soft:#e2f1e8;--btn:#eef1ed;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#121a16;--card:#1b2620;--ink:#e8efe9;--mute:#9bab9f;--line:#2c3a32;--acc:#4fc58a;--soft:#1f3a2c;--btn:#26352c}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#121a16;--card:#1b2620;--ink:#e8efe9;--mute:#9bab9f;--line:#2c3a32;--acc:#4fc58a;--soft:#1f3a2c;--btn:#26352c}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;line-height:1.4}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:14px 16px 12px;border-bottom:1px solid var(--line)}
+.wrap{max-width:640px;margin:0 auto}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.big{font-size:44px;font-weight:700;line-height:1;letter-spacing:-1px}
+.big small{font-size:16px;font-weight:500;color:var(--mute);letter-spacing:0;margin-left:4px}
+.tgt{font-size:13px;color:var(--mute);text-align:right}
+.tgt input{width:72px;font:inherit;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:4px 6px;text-align:right}
+.bar{height:10px;background:var(--line);border-radius:6px;margin:12px 0 6px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+#status{font-size:14px;font-weight:600}
+main{padding:12px 16px 40px}
+.row{display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.nm{font-weight:600}
+.un{font-size:13px;color:var(--mute)}
+.sub{font-size:13px;color:var(--mute);margin-top:2px}
+.sub b{color:var(--acc);font-size:15px}
+.ctl{display:flex;align-items:center;gap:6px}
+.ctl button{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--btn);color:var(--ink);font-size:22px;font-weight:600;cursor:pointer;line-height:1}
+.ctl button:active{background:var(--soft)}
+.ctl input{width:54px;height:40px;text-align:center;font:inherit;font-weight:700;font-size:17px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.del{background:none;border:none;color:var(--mute);font-size:12px;cursor:pointer;padding:0;margin-left:8px;text-decoration:underline}
+form{display:grid;grid-template-columns:1fr 1fr 90px auto;gap:8px;margin:18px 0 10px}
+form input{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 10px;min-width:0}
+.add{background:var(--acc);color:#fff;border:none;border-radius:10px;font:inherit;font-weight:600;padding:0 16px;cursor:pointer}
+.reset{background:none;border:1px solid var(--line);color:var(--mute);border-radius:10px;font:inherit;padding:9px 14px;cursor:pointer}
+.note{font-size:12px;color:var(--mute);margin-top:14px}
+@media (max-width:520px){form{grid-template-columns:1fr 1fr}.add{height:40px}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="top">
+    <div class="big"><span id="total">0</span><small>kcal today</small></div>
+    <label class="tgt">Daily target<br><input id="target" type="number" min="0" step="50" value="2000"></label>
+  </div>
+  <div class="bar"><i id="fill"></i></div>
+  <div id="status"></div>
+</div></header>
+<main><div class="wrap">
+  <div id="list"></div>
+  <form id="addf">
+    <input id="an" placeholder="New food name" required>
+    <input id="au" placeholder="1 unit = (e.g. 1 roti)">
+    <input id="ak" type="number" min="0" step="1" placeholder="kcal" required>
+    <button class="add" type="submit">Add food</button>
+  </form>
+  <button class="reset" id="clear" type="button">Set all to 0</button>
+  <p class="note">Calories are typical averages, not exact for your cooking. Oil, ghee and masala add more. Tap − and + to change a quantity, or type a number.</p>
+</div></main>
+<script>
+var DEFAULT=[
+["Eggs","1 large egg",72,3],["Peanut butter","1 tbsp (16 g)",95,1],["Milk (full cream)","1 glass (250 ml)",150,2],
+["Yogurt (full fat)","1 cup (245 g)",150,1],["Rice (cooked)","1 cup cooked",205,3],["Oats (dry)","50 g dry",195,1],
+["Boiled potato","1 medium (150 g)",130,2],["White chola (cooked)","1 cup cooked",270,1],["Lobya (cooked)","1 cup cooked",200,0],
+["Fish (cooked)","100 g",130,0],["Chicken (cooked)","100 g",165,0],["Beef (cooked)","100 g",250,0]
+].map(function(f){return{n:f[0],u:f[1],k:f[2],q:f[3]}});
+var foods=DEFAULT, KEY="diet-calc-v1";
+try{var s=localStorage.getItem(KEY);if(s){var p=JSON.parse(s);if(Array.isArray(p)&&p.length)foods=p}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(foods))}catch(e){}}
+function fmt(n){return Math.round(n).toLocaleString("en-US")}
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function render(){
+  document.getElementById("list").innerHTML=foods.map(function(f,i){
+    return '<div class="row"><div><div class="nm">'+esc(f.n)+'<button class="del" data-i="'+i+'" data-a="del" type="button">remove</button></div>'
+    +'<div class="un">1 unit = '+esc(f.u.replace(/^1 unit = /,''))+' · '+f.k+' kcal</div>'
+    +'<div class="sub"><b id="s'+i+'">0</b> kcal</div></div>'
+    +'<div class="ctl"><button data-i="'+i+'" data-a="dec" type="button" aria-label="Decrease '+esc(f.n)+'">−</button>'
+    +'<input data-i="'+i+'" type="number" min="0" step="0.5" value="'+f.q+'" aria-label="Quantity of '+esc(f.n)+'">'
+    +'<button data-i="'+i+'" data-a="inc" type="button" aria-label="Increase '+esc(f.n)+'">+</button></div></div>';
+  }).join("");
+  totals();
+}
+function totals(){
+  var t=0;
+  foods.forEach(function(f,i){var v=f.k*f.q;t+=v;var e=document.getElementById("s"+i);if(e)e.textContent=fmt(v)});
+  var g=parseFloat(document.getElementById("target").value)||0;
+  document.getElementById("total").textContent=fmt(t);
+  document.getElementById("fill").style.width=(g>0?Math.min(100,t/g*100):0)+"%";
+  document.getElementById("status").textContent=g<=0?"":(t>=g?"Target reached ("+fmt(t-g)+" kcal over)":"Need "+fmt(g-t)+" more kcal");
+}
+document.getElementById("list").addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b)return;
+  var i=+b.dataset.i,a=b.dataset.a,f=foods[i];
+  if(a==="inc")f.q=Math.round((f.q+1)*100)/100;
+  else if(a==="dec")f.q=Math.max(0,Math.round((f.q-1)*100)/100);
+  else if(a==="del")foods.splice(i,1);
+  save();render();
+});
+document.getElementById("list").addEventListener("input",function(e){
+  var i=e.target.dataset.i;if(i===undefined)return;
+  var v=parseFloat(e.target.value);foods[i].q=isNaN(v)||v<0?0:v;save();totals();
+});
+document.getElementById("target").addEventListener("input",totals);
+document.getElementById("addf").addEventListener("submit",function(e){
+  e.preventDefault();
+  var n=document.getElementById("an").value.trim(),u=document.getElementById("au").value.trim()||"1 serving",k=parseFloat(document.getElementById("ak").value);
+  if(!n||isNaN(k))return;
+  foods.push({n:n,u:u,k:k,q:1});save();render();e.target.reset();
+});
+document.getElementById("clear").addEventListener("click",function(){foods.forEach(function(f){f.q=0});save();render()});
+render();
+</script>
+</body>
+</html>
